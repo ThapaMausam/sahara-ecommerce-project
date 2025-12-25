@@ -21,7 +21,7 @@ class User extends Model {
     @Column({
         primaryKey: true,
         type: DataType.UUID, // Universally Unique Identifier
-        defaultValue: DataType.UUID // Automatically generates new UUID if not provided
+        defaultValue: DataType.UUIDV4 // Automatically generates new UUID if not provided
     })
     declare id: string // Tells TS to wait, it will be created by sequelize
 
