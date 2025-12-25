@@ -1,7 +1,9 @@
 import { Sequelize } from "sequelize-typescript"
 import { envConfig } from "../config/config.js"
 
-const sequelize = new Sequelize(envConfig.connectionString as string)
+const sequelize = new Sequelize(envConfig.connectionString as string, {
+    models: [__dirname + "/models"]
+})
 
 export const initializeDatabasePromise = sequelize.authenticate()
     .then(() => {
