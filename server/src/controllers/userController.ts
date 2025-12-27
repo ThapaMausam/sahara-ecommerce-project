@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import User from "../database/models/userModel.js"
 import bcrypt from "bcrypt"
 import generateJwt from "../services/generateJwt.js";
+import generateOtp from "../services/generateOtp.js";
+import sendMail from "../services/sendMail.js";
 
 class UserController {
     static async register(req: Request, res: Response) {
@@ -77,6 +79,46 @@ class UserController {
                 message: "Logged in successfully.",
                 token: token
             })
+        }
+    }
+
+    static async handleForgotPassword(req: Request, res: Response) {
+        const { email } = req.body
+
+        if (!email) {
+            res.status(400).json({
+                message: "Please enter the email."
+            })
+            return
+        }
+
+        const [user] = await User.findAll({
+            where: {
+                email: email
+            }
+        })
+
+        if (!user) {
+            res.status(400).json({
+                message: "The user doesn't exist."
+            })
+            return
+        }
+
+        const otp = generateOtp()
+
+        try{
+            await sendMail({
+                to: user.email,
+                subject: "Sahara Forgot Password Reset Request",
+                text: `OTP : ${otp}`,
+            })
+
+            res.status(200).json({
+                message: "OTP sent successfully."
+            })
+        } catch(error) {
+            console.log(error)
         }
     }
 }
