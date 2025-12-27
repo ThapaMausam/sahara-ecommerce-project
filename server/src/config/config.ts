@@ -4,4 +4,6 @@ dotenv.config()
 export const envConfig = {
     port: process.env.PORT,
     connectionString: process.env.CONNECTION_STRING,
+    jwtKey: process.env.JWT_SECRET_KEY,
+    jwtExpiry: process.env.JWT_EXPIRES_IN as string
 }

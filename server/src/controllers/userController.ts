@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import User from "../database/models/userModel.js"
 import bcrypt from "bcrypt"
+import generateJwt from "../services/generateJwt.js";
 
 class UserController {
     static async register(req: Request, res: Response) {
@@ -69,8 +70,12 @@ class UserController {
                 message: "Incorrect Password"
             })
         } else {
+
+            const token = generateJwt(user.id)
+
             res.status(200).json({
-                message: "Logged in successfully."
+                message: "Logged in successfully.",
+                token: token
             })
         }
     }
