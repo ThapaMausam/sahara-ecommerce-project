@@ -12,15 +12,22 @@ class UserController {
             const { username, email, password } = req.body // Destructuring the json data sent by frontend or postman that is received in req.body
 
             if (!username || !email || !password) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: "Please provide username, email and password",
                 })
+                return
             }
 
             await User.create({
                 username,
                 email,
                 password: bcrypt.hashSync(password, 10)
+            })
+
+            await sendMail({
+                to: email,
+                subject: "Sahara Registration Notice",
+                text: `Registered successfully`,
             })
 
             // 201 created status
@@ -113,6 +120,11 @@ class UserController {
                 subject: "Sahara Forgot Password Reset Request",
                 text: `OTP : ${otp}`,
             })
+
+            // Storing otp and otp generated time in the user's column
+            user.otp = otp.toString()
+            user.otpGeneratedTime = Date.now().toString()
+            await user.save()
 
             res.status(200).json({
                 message: "OTP sent successfully."
