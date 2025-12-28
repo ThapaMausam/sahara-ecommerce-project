@@ -4,6 +4,9 @@ import bcrypt from "bcrypt"
 import generateJwt from "../services/generateJwt.js";
 import generateOtp from "../services/generateOtp.js";
 import sendMail from "../services/sendMail.js";
+import findData from "../services/findData.js";
+import sendResponse from "../services/sendResponse.js";
+import checkOtpExpiration from "../services/checkOtpExpiration.js";
 
 class UserController {
     static async register(req: Request, res: Response) {
@@ -99,11 +102,13 @@ class UserController {
             return
         }
 
-        const [user] = await User.findAll({
-            where: {
-                email: email
-            }
-        })
+        // const [user] = await User.findAll({
+        //     where: {
+        //         email: email
+        //     }
+        // })
+
+        const user = await findData(User, email)
 
         if (!user) {
             res.status(400).json({
@@ -116,7 +121,7 @@ class UserController {
 
         try{
             await sendMail({
-                to: user.email,
+                to: email,
                 subject: "Sahara Forgot Password Reset Request",
                 text: `OTP : ${otp}`,
             })
@@ -132,6 +137,73 @@ class UserController {
         } catch(error) {
             console.log(error)
         }
+    }
+
+    static async verifyOtp(req: Request, res: Response) {
+        // Step 1: Take email and otp from user
+        const { email, otp } = req.body
+
+        // Step 2: If either email or otp is missing send response
+        if (!email || !otp) {
+            sendResponse(res, 404, "Please enter the email and otp.")
+            return
+        }
+
+        // Step 3: Check if the user with that email exist or not
+        const user = await findData(User, email)
+
+        if (!user) {
+            sendResponse(res, 404, "The user with that email doesn't exist.")
+            return
+        }
+
+        // Step 4: Check the database that matches both email and otp
+        const [data] = await User.findAll({
+            where: {
+                email,
+                otp
+            }
+        })
+
+        // Step 5: If the email and otp doesn't match then data is empty
+        if (!data) {
+            sendResponse(res, 404, "Invalid OTP")
+            return
+        }
+
+        const otpGeneratedTime = data.otpGeneratedTime
+
+        checkOtpExpiration(res, otpGeneratedTime, 120000)
+    }
+
+    static async resetPassword(req: Request, res: Response) {
+        // Step 1: Take email, new password, confirm password from user
+        const { email, newPassword, confirmPassword } = req.body
+
+        // Step 2: Empty validation
+        if (!email || !newPassword || !confirmPassword) {
+            sendResponse(res, 404, "Please enter email, new password and confirm password.")
+            return
+        }
+
+        // Step 3: Validate newPassword and confirmPassword
+        if (newPassword != confirmPassword) {
+            sendResponse(res, 404, "New Password and Confirm Password must be same.")
+            return
+        }
+
+        // Step 4: Check if email is valid
+        const user = await findData(User, email)
+
+        if (!user) {
+            sendResponse(res, 404, "The user with that email doesn't exist.")
+            return
+        }
+
+        // Step 5: Store new password
+        user.password = bcrypt.hashSync(newPassword, 12)
+        await user.save()
+        sendResponse(res,200,"Password reset successfully!!!")
     }
 }
 
