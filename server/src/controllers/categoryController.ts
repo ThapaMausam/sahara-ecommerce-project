@@ -104,6 +104,35 @@ class CategoryController {
             sendResponse(res, 500, "Failed to delete category")
         }
     }
+
+    async updateCategory(req: Request, res: Response): Promise<void> {
+
+        try {
+            const { categoryId } = req.params
+    
+            const { categoryName } = req.body
+    
+            if (!categoryId || !categoryName || !categoryName.trim()) {
+                console.log("Please enter valid id and category name")
+                sendResponse(res, 400, "Please enter valid id and category name")
+                return
+            }
+    
+            const category = await Category.findByPk(categoryId) // Returns object
+            
+            if (!category) {
+                sendResponse(res, 404, "Failed to find category with the Id")
+                return
+            }
+
+            await Category.update({ categoryName : categoryName.trim()}, { where: {categoryId}})
+
+            sendResponse(res, 200, "Category updated successfully")
+        } catch (error) {
+            console.log("Failed to update category")
+            sendResponse(res, 500, "Failed to update category")
+        }
+    }
 }
 
 export default new CategoryController
