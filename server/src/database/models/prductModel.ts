@@ -1,4 +1,4 @@
-import { Table, Column, Model, DataType, PrimaryKey, NotNull, AllowNull } from "sequelize-typescript"
+import { Table, Column, Model, DataType } from "sequelize-typescript"
 
 // Table is the class decorator for class Product
 @Table({
