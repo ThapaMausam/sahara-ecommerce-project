@@ -1,10 +1,31 @@
-import express from "express"
-import categoryController from "../controllers/categoryController.js"
-import userMiddleware from "../middleware/userMiddleware.js"
+import express from "express";
+import categoryController from "../controllers/categoryController.js";
+// Import the specific functions and the Role enum
+import { isUserLoggedIn, restrictTo, Role } from "../middleware/userMiddleware.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.route("/").post(userMiddleware.isUserLoggedIn, userMiddleware.restrictTo(), categoryController.addCategory).get(categoryController.getCategories) // next allows to move between the routes
-router.route("/:categoryId").delete(categoryController.deleteCategory).patch(categoryController.updateCategory)
+// Public: Everyone can see categories
+// Admin Only: Can create categories
+router.route("/")
+    .get(categoryController.getCategories)
+    .post(
+        isUserLoggedIn, 
+        restrictTo(Role.Admin), 
+        categoryController.addCategory
+    );
 
-export default router
+// Admin Only: Can delete or update categories
+router.route("/:categoryId")
+    .patch(
+        isUserLoggedIn, 
+        restrictTo(Role.Admin), 
+        categoryController.updateCategory
+    )
+    .delete(
+        isUserLoggedIn, 
+        restrictTo(Role.Admin), 
+        categoryController.deleteCategory
+    );
+
+export default router;

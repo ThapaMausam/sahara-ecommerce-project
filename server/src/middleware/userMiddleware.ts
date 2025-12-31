@@ -1,62 +1,75 @@
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 import sendResponse from "../services/sendResponse.js";
-import jwt from "jsonwebtoken"
 import { envConfig } from "../config/config.js";
 import User from "../database/models/userModel.js";
+
+// 1. Keep types in a separate file usually, but this is okay for now.
+export interface IAuthRequest extends Request {
+    user?: {
+        id: string;
+        email: string;
+        role: string;
+    }
+}
 
 export enum Role {
     Customer = "customer",
     Admin = "admin"
 }
 
-interface IExtendedRequest extends Request{
-    user?: {
-        id: string;
-        username: string;
-        email: string;
-        password: string;
-        role: string;
-    }
-}
+// 2. Export functions directly. No need for a Class.
+export const isUserLoggedIn = async (req: IAuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authHeader = req.headers.authorization;
 
-class UserMiddleware {
-    isUserLoggedIn(req: IExtendedRequest, res: Response, next: NextFunction) {
-        // Take token from req.headers
-        const token = req.headers.authorization
-
-        if (!token) {
-            sendResponse(res, 403, "Empty token")
-            return
+        // 3. specific check for Bearer token standard
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            sendResponse(res, 401, "Please login first (Token missing or malformed)");
+            return; 
         }
 
-        // validate token
-        jwt.verify(token, envConfig.jwtKey as string, async (err, result: any) => {
-            if (err) {
-                sendResponse(res, 403, "Token is inavlid", err)
-            } else {
-                // console.log(result) -> { userID: , }
-                // req.userId = result.userId : Middleware allows to transfer req objects
+        // Split "Bearer <token>" and take the second part
+        const token = authHeader.split(" ")[1] as string;
 
-                // Find the user with result.userID
-                const userData = await User.findByPk(result.userId)
+        // 4. Verify synchronously inside try/catch. 
+        // This throws an error if invalid, which goes to the catch block.
+        const decoded = jwt.verify(token, envConfig.jwtKey as string) as JwtPayload;
 
-                if (!userData) {
-                    sendResponse(res, 404, "User doesn't exist")
-                    return
-                }
+        // 5. Database call
+        // OPTIMIZATION: Use attributes/projection to ONLY fetch what you need. 
+        // NEVER fetch the password.
+        const user = await User.findByPk(decoded.userId, {
+            attributes: ['id', 'username', 'email', 'role'] 
+        });
 
-                req.user = userData
+        if (!user) {
+            sendResponse(res, 401, "User belonging to this token no longer exists");
+            return;
+        }
 
-                next() // After next never write success response
-            }
-        })
+        // 6. Attach safe user data to request
+        // We use type assertion or define the user type on the model
+        req.user = user as unknown as { id: string; email: string; role: string };
+
+        next(); // Move to the next middleware
+
+    } catch (error) {
+        sendResponse(res, 401, "Invalid or Expired Token", error);
     }
+};
 
-    restrictTo(...roles: Role[]) {
-        return ((req: IExtendedRequest, res: Response, next: NextFunction) => {
-            const userRole = req.user?.role as Role
-        })
-    }
-}
+// 7. Factory Function for Role Authorization
+export const restrictTo = (...allowedRoles: Role[]) => {
+    return (req: IAuthRequest, res: Response, next: NextFunction) => {
+        // req.user is guaranteed to exist here because isUserLoggedIn runs first
+        const userRole = req.user?.role; 
 
-export default new UserMiddleware
+        if (!userRole || !allowedRoles.includes(userRole as Role)) {
+            sendResponse(res, 403, "You do not have permission to perform this action");
+            return;
+        }
+
+        next();
+    };
+};
