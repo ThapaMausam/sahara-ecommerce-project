@@ -37,7 +37,8 @@ class ProductController {
             const products = await Product.findAll({
                 include: [
                     {
-                        model: Category
+                        model: Category,
+                        attributes: ['categoryId', 'categoryName']
                     }
                 ]
             })
