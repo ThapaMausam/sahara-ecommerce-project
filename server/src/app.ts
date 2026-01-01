@@ -2,7 +2,7 @@ import express from "express"
 import "./database/connection.js"
 import userRoute from "./routes/userRoute.js"
 import categoryRoute from "./routes/categoryRoute.js"
-import productRoute from "./routes/categoryRoute.js"
+import productRoute from "./routes/productRoute.js"
 
 const app = express()
 

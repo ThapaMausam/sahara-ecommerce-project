@@ -1,34 +1,38 @@
 import type { Request, Response } from "express";
 import sendResponse from "../services/sendResponse.js";
-import Product from "../database/models/prductModel.js";
+import Product from "../database/models/productModel.js";
 import Category from "../database/models/categoryModel.js";
 
 
 class ProductController {
 
-    async createProduct(req: Request, res: Response) {
+    async createProduct(req: Request, res: Response): Promise<void> {
         try {
-            const { productId, productTitle, productDescription, productPrice, productStock, productDiscount, categoryId } = req.body
-    
-            if (!productId || !productTitle || !productDescription || !productPrice || !productStock || !productDiscount || !categoryId) {
+            const { productTitle, productDescription, productPrice, productStock, productDiscount, categoryId } = req.body
+
+            if (!productTitle || !productDescription || !productPrice || !productStock || !productDiscount || !categoryId) {
                 sendResponse(res, 400, "Please enter all product details")
                 return
             }
+
+            console.log(req.file)
+
+            const filename = req.file ? req.file.filename : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHZqj-XReJ2R76nji51cZl4ETk6-eHRmZBRw&s"
     
             await Product.create({
-                productId,
                 productTitle: productTitle.trim(),
                 productDescription,
                 productPrice,
                 productStock,
                 productDiscount,
-                categoryId
+                categoryId,
+                productImageUrl: filename
             })
     
             sendResponse(res, 200, "Product. created successfully")
             
         } catch (error) {
-            sendResponse(res, 500, "Failed to create error", error)
+            sendResponse(res, 500, "Failed to create product", error)
         }
     }
 
@@ -62,7 +66,8 @@ class ProductController {
                     productId
                 }, 
                 include: [{
-                    model: Category
+                    model: Category,
+                    attributes: ['categoryId', 'categoryName']
                 }]
             })
 
