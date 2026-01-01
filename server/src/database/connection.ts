@@ -14,11 +14,14 @@ export const connectDB = async () => {
         await sequelize.authenticate();
         console.log("Database connected and authenticated successfully.");
 
-        await sequelize.sync({ force: false, alter: false });
+        await sequelize.sync({ force: false, alter: true });
         console.log("Database and Model synced successfully.");
     } catch (error) {
         console.error("Database connection failed:", error);
     }
 };
+
+Product.belongsTo(Category)
+Category.hasMany(Product)
 
 export default sequelize;

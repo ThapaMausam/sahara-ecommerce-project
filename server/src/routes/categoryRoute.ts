@@ -1,7 +1,7 @@
 import express from "express";
 import categoryController from "../controllers/categoryController.js";
 // Import the specific functions and the Role enum
-import { isUserLoggedIn, restrictTo, Role } from "../middleware/userMiddleware.js";
+import { isUserLoggedIn, allowTo, Role } from "../middleware/userMiddleware.js";
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.route("/")
     .get(categoryController.getCategories)
     .post(
         isUserLoggedIn, 
-        restrictTo(Role.Admin), 
+        allowTo(Role.Admin), 
         categoryController.addCategory
     );
 
@@ -19,12 +19,12 @@ router.route("/")
 router.route("/:categoryId")
     .patch(
         isUserLoggedIn, 
-        restrictTo(Role.Admin), 
+        allowTo(Role.Admin), 
         categoryController.updateCategory
     )
     .delete(
         isUserLoggedIn, 
-        restrictTo(Role.Admin), 
+        allowTo(Role.Admin), 
         categoryController.deleteCategory
     );
 

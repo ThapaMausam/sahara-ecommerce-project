@@ -60,12 +60,12 @@ export const isUserLoggedIn = async (req: IAuthRequest, res: Response, next: Nex
 };
 
 // 7. Factory Function for Role Authorization
-export const restrictTo = (...allowedRoles: Role[]) => {
+export const allowTo = (...allowedRoles: Role[]) => {
     return (req: IAuthRequest, res: Response, next: NextFunction) => {
         // req.user is guaranteed to exist here because isUserLoggedIn runs first
-        const userRole = req.user?.role; 
+        const userRole = req.user?.role as Role;
 
-        if (!userRole || !allowedRoles.includes(userRole as Role)) {
+        if (!userRole || !allowedRoles.includes(userRole)) {
             sendResponse(res, 403, "You do not have permission to perform this action");
             return;
         }
