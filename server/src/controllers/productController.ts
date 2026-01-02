@@ -120,13 +120,6 @@ class ProductController {
     async updateProduct(req: Request, res: Response) {
         try {
             const { productId } = req.params
-
-            const { productTitle, productDescription, productPrice, productStock, productDiscount, categoryId } = req.body
-
-            if (!productId || !productTitle || !productDescription || !productPrice || !productStock || !productDiscount || !categoryId) {
-                sendResponse(res, 400, "Please enter valid details")
-                return
-            }
             
             const product = await Product.findByPk(productId)
 
@@ -134,6 +127,15 @@ class ProductController {
                 sendResponse(res, 404, "Product with that id doesn't exist")
             }
 
+            const { productTitle, productDescription, productPrice, productStock, productDiscount, categoryId } = req.body
+
+            const filename = req.file?.filename
+
+            if (!productTitle || !productDescription || !productPrice || !productStock || !productDiscount || !categoryId || !filename) {
+                sendResponse(res, 400, "Please enter valid details")
+                return
+            }
+            
             await Product.update(
                 {
                     productTitle: productTitle.trim(),
@@ -141,7 +143,8 @@ class ProductController {
                     productPrice,
                     productStock,
                     productDiscount,
-                    categoryId
+                    categoryId,
+                    productImageUrl: filename
                 },
                 {
                     where: {productId}

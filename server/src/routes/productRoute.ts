@@ -25,7 +25,8 @@ router.route("/:productId")
     )
     .patch(
         isUserLoggedIn, 
-        allowTo(Role.Admin), 
+        allowTo(Role.Admin),
+        upload.single("productImage"),
         productController.updateProduct
     )
 
