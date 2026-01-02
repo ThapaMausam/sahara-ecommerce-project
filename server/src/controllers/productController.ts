@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import sendResponse from "../services/sendResponse.js";
 import Product from "../database/models/productModel.js";
 import Category from "../database/models/categoryModel.js";
-
+import fs from "fs"
 
 class ProductController {
 
@@ -85,6 +85,25 @@ class ProductController {
     async deleteProduct(req: Request, res: Response) {
         try {
             const { productId } = req.params
+
+            const product = await Product.findByPk(productId)
+
+            if (!product) {
+                sendResponse(res, 404, "Product with that id doesn't exist")
+                return
+            }
+
+            const imageName = product.productImageUrl
+
+            if (imageName) {
+                const imagePath = `./src/uploads/${imageName}`
+
+                fs.unlink(imagePath, (err) => {
+                    if (err) {
+                        sendResponse(res, 500, "Failed to delete image")
+                    }
+                })
+            }
 
             await Product.destroy({
                 where: {
