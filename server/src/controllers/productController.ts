@@ -118,7 +118,6 @@ class ProductController {
     }
 
     async updateProduct(req: Request, res: Response) {
-        try {
             const { productId } = req.params
             
             const product = await Product.findByPk(productId)
@@ -152,9 +151,6 @@ class ProductController {
             )
 
             sendResponse(res, 200, "Product updated successfully")
-        } catch (error) {
-            sendResponse(res, 500, "Failed to update product", error)
-        }
     }
 }
 
