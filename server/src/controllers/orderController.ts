@@ -4,6 +4,7 @@ import Order from "../database/models/orderModel.js";
 import OrderDetails from "../database/models/orderDetailsModel.js";
 import Payment from "../database/models/paymentModel.js";
 import { PaymentMethod } from "../global/globalType.js";
+import axios from "axios";
 
 interface IProduct {
     productId: string,
@@ -17,6 +18,7 @@ interface IUserId extends Request {
 }
 
 class OrderController {
+
     async createOrder(req: IUserId, res: Response) {
         const { phoneNumber, shippingAddress, totalAmount, paymentMethod } = req.body
         const products: IProduct[] = req.body.products
@@ -42,17 +44,38 @@ class OrderController {
             })
         }
 
+        const payment = await Payment.create({
+            orderId: order.orderId
+        })
         if (paymentMethod === PaymentMethod.COD) {
-            await Payment.create({
-                orderId: order.orderId
-            })
-        } else if (paymentMethod === PaymentMethod.Esewa) {
+            payment.paymentMethod = PaymentMethod.COD
+        } else if (paymentMethod === PaymentMethod.Khalti) {
+            const payload = {
+                "return_url": "http://localhost:5173",
+                "website_url": "http://localhost:5173",
+                "amount": totalAmount * 100,
+                "purchase_order_id": order.orderId,
+                "purchase_order_name": "order_" + order.orderId,
+            }
 
+            const response = await axios.post("https://dev.khalti.com/api/v2/epayment/initiate/", payload, {
+                headers: {
+                    "Authorization": "Key f1cb6645c5f143f998a9e30d46dfdba1"
+                }
+            })
+
+            // console.log(response)
+            payment.pidx = response.data.pidx
+            payment.paymentMethod = PaymentMethod.Khalti
+
+            payment.save()
+
+            sendResponse(res, 200, "Order created successfully", {
+                url: response.data.payment_url
+            })
         } else {
 
         }
-
-        sendResponse(res, 200, "Order created successfully")
     }
 }
 

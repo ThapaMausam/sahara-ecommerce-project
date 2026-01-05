@@ -14,6 +14,6 @@ app.use(express.json())
 app.use("/api/auth", userRoute) // Routes to userRoute
 app.use("/api/category", categoryRoute)
 app.use("/api/product", productRoute)
-app.use("api/order", orderRoute)
+app.use("/api/order", orderRoute)
 
 export default app

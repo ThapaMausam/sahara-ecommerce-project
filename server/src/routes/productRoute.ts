@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Router } from "express"
 import productController from "../controllers/productController.js"
 import { allowTo, isUserLoggedIn, Role } from "../middleware/userMiddleware.js"
 import { multer , storage } from "../middleware/multerMiddlware.js"
@@ -6,7 +6,7 @@ import errorHandler from "../services/errorHandler.js"
 
 const upload = multer({storage: storage})
 
-const router = express.Router()
+const router: Router = express.Router()
 
 router.route("/")
     .get(productController.getAllProduct)
